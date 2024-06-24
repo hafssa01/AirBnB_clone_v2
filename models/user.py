@@ -11,7 +11,7 @@ class User(BaseModel, Base):
     password = ''
     first_name = ''
     last_name = ''
-    email = Column(String(128),nullable=False)
-    password = Column(String(128),nullable=False)
-    first_name = Column(String(128),nullable=False)
-    last_name = Column(String(128),nullable=False)
+    email = Column(String(128), nullable=False)
+    password = Column(String(128), nullable=False)
+    first_name = Column(String(128), nullable=False)
+    last_name = Column(String(128), nullable=False)
