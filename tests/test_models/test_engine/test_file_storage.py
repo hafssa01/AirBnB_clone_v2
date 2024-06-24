@@ -2,7 +2,12 @@
 """ Module for testing file storage"""
 import unittest
 from models.base_model import BaseModel
+from models.state import State
+from models.place import Place
+from console import HBNBCommand
 from models import storage
+import sys
+from io import StringIO
 import os
 
 
@@ -16,6 +21,8 @@ class test_fileStorage(unittest.TestCase):
             del_list.append(key)
         for key in del_list:
             del storage._FileStorage__objects[key]
+	self.backup = sys.stdout
+	sys.stdout = StringIO()
 
     def tearDown(self):
         """ Remove storage file at end of tests """
@@ -23,6 +30,7 @@ class test_fileStorage(unittest.TestCase):
             os.remove('file.json')
         except:
             pass
+	sys.stdout = self.backup
 
     def test_obj_list_empty(self):
         """ __objects is initially empty """
@@ -107,3 +115,48 @@ class test_fileStorage(unittest.TestCase):
         from models.engine.file_storage import FileStorage
         print(type(storage))
         self.assertEqual(type(storage), FileStorage)
+
+
+    def test_create_state_with_params(self):
+        """Test creating a State with parameters"""
+        console = HBNBCommand()
+        console.onecmd('create State name="California"')
+        output = sys.stdout.getvalue().strip()
+        self.assertNotEqual(output, "")
+        state_id = output
+        key = "State." + state_id
+        self.assertIn(key, storage.all().keys())
+        self.assertEqual(storage.all()[key].name, "California")
+        sys.stdout = StringIO()  # Resetting the StringIO buffer
+
+    def test_create_place_with_params(self):
+        """Test creating a Place with multiple parameters"""
+        console = HBNBCommand()
+        console.onecmd('create Place city_id="0001" user_id="0001" name="My_little_house" number_rooms=4 number_bathrooms=2 max_guest=10 price_by_night=300 latitude=37.773972 longitude=-122.431297')
+        output = sys.stdout.getvalue().strip()
+        self.assertNotEqual(output, "")
+        place_id = output
+        key = "Place." + place_id
+        self.assertIn(key, storage.all().keys())
+        place = storage.all()[key]
+        self.assertEqual(place.city_id, "0001")
+        self.assertEqual(place.user_id, "0001")
+        self.assertEqual(place.name, "My little house")
+        self.assertEqual(place.number_rooms, 4)
+        self.assertEqual(place.number_bathrooms, 2)
+        self.assertEqual(place.max_guest, 10)
+        self.assertEqual(place.price_by_night, 300)
+        self.assertAlmostEqual(place.latitude, 37.773972)
+        self.assertAlmostEqual(place.longitude, -122.431297)
+        sys.stdout = StringIO()  # Resetting the StringIO buffer
+
+    def test_create_invalid_class(self):
+        """Test creating an object with an invalid class"""
+        console = HBNBCommand()
+        console.onecmd('create InvalidClass name="Invalid"')
+        output = sys.stdout.getvalue().strip()
+        self.assertEqual(output, "** class doesn't exist **")
+        sys.stdout = StringIO()
+
+
+
