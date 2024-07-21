@@ -1,76 +1,30 @@
 #!/usr/bin/python3
-""" Do deploy """
-from fabric.api import *
-import os
+"""
+Fabric script based on the file 1-pack_web_static.py that distributes an
+archive to the web servers
+"""
 
-
-env.user = 'ubuntu'
-env.hosts = ['35.153.17.97', '54.237.43.3']
+from fabric.api import put, run, env
+from os.path import exists
+env.hosts = ['54.89.109.87', '100.25.190.21']
 
 
 def do_deploy(archive_path):
-    ''' Distributes an archive to my web servers.
-    '''
-    if local("ls {}".format(archive_path)).failed:
+    """distributes an archive to the web servers"""
+    if exists(archive_path) is False:
         return False
-
-    # Upload the archive to the /tmp/ directory of the web server
-    op = put(archive_path, '/tmp/')
-    if op.failed:
+    try:
+        file_n = archive_path.split("/")[-1]
+        no_ext = file_n.split(".")[0]
+        path = "/data/web_static/releases/"
+        put(archive_path, '/tmp/')
+        run('mkdir -p {}{}/'.format(path, no_ext))
+        run('tar -xzf /tmp/{} -C {}{}/'.format(file_n, path, no_ext))
+        run('rm /tmp/{}'.format(file_n))
+        run('mv {0}{1}/web_static/* {0}{1}/'.format(path, no_ext))
+        run('rm -rf {}{}/web_static'.format(path, no_ext))
+        run('rm -rf /data/web_static/current')
+        run('ln -s {}{}/ /data/web_static/current'.format(path, no_ext))
+        return True
+    except:
         return False
-
-    # Parse out file name from argument
-    filePathList = archive_path.split('/')
-    fileName = filePathList[len(filePathList) - 1]
-    fileNameNoExt = fileName.split('.')[0]
-
-    # Create required directory if not exists
-    op = run("mkdir -p /data/web_static/releases/{}".format(fileNameNoExt))
-    if op.failed:
-        return False
-
-    # Unpack archive to required directory
-    op = run(
-            "tar -xzf /tmp/{} -C /data/web_static/releases/{}".format(
-                fileName, fileNameNoExt))
-    if op.failed:
-        return False
-
-    # Delete the archive from the server
-    op = run("rm -rf /tmp/{}".format(fileName))
-    if op.failed:
-        return False
-
-    # Move contents of archive to right directory
-    op = run(
-            "cp -r /data/web_static/releases/{}/web_static/*\
-                    /data/web_static/releases/{}/".format(
-                fileNameNoExt, fileNameNoExt))
-    if op.failed:
-        return False
-
-    # Delete redundant web_static folder
-    op = run(
-            "rm -rf /data/web_static/releases/{}/web_static".format(
-                fileNameNoExt))
-    if op.failed:
-        return False
-
-    # Ensure the directories and files have the right permissions to avoid 403
-    op = sudo("chmod -R 755 /data/web_static/")
-    if op.failed:
-        return False
-
-    # Delete the symbolic link `current`
-    op = run("rm -rf /data/web_static/current")
-    if op.failed:
-        return False
-
-    # Create new symbolic link
-    op = run(
-            "ln -s -T /data/web_static/releases/{}/\
-                    /data/web_static/current".format(fileNameNoExt))
-    if op.failed:
-        return False
-
-    return True
