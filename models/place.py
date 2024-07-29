@@ -33,6 +33,7 @@ class Place(BaseModel, Base):
     """A place to stay"""
 
     __tablename__ = "places"
+    
     if storage_type == "db":
         city_id = Column(String(60), ForeignKey("cities.id"), nullable=False)
         user_id = Column(String(60), ForeignKey("users.id"), nullable=False)
@@ -80,7 +81,7 @@ class Place(BaseModel, Base):
             reviewsList = []
             reviewsAll = storage.all(Review)
             for review in reviewsAll.values():
-                if review.place_id in self.id:
+                if review.place_id == self.id:
                     reviewsList.append(review)
             return reviewsList
 
@@ -89,4 +90,3 @@ class Place(BaseModel, Base):
             """Setter"""
             if isinstance(amenity, Amenity):
                 self.amenity_ids.append(amenity.id)
-        

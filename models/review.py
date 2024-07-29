@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from os import getenv
 
 storage_type = getenv("HBNB_TYPE_STORAGE")
-	@@ -11,7 +13,9 @@ class Review(BaseModel, Base):
+class Review(BaseModel, Base):
     __tablename__ = 'reviews'
 
     if storage_type == "db":

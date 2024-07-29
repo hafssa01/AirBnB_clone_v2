@@ -10,10 +10,11 @@ def teardown_db(exception):
     """Remove the current SQLAlchemy Session."""
     storage.close()
 
-@app.route('/states_list')
+@app.route('/states_list', strict_slashes=False)
 def states_list():
     """Display a HTML page with the list of all State objects."""
     states = storage.all(State).values()
+    print("States retrieved:", states)
     return render_template('7-states_list.html', states=sorted(states, key=lambda state: state.name))
 
 if __name__ == "__main__":

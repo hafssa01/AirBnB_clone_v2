@@ -6,19 +6,43 @@ from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime
 
-
 Base = declarative_base()
 
-
-# Note: BaseModel does NOT imherit from Base
-# it only defines the common attributes
 class BaseModel:
     """A base class for all hbnb models"""
-    # define the field properties of the attributes (for sqlalchemy)
-	@@ -56,7 +57,7 @@ def to_dict(self):
+    
+    id = Column(String(60), primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __init__(self, *args, **kwargs):
+        """Initialization of the BaseModel instance"""
+        if kwargs:
+            for key, value in kwargs.items():
+                if key != '__class__':
+                    setattr(self, key, value)
+        else:
+            self.id = str(uuid.uuid4())
+            self.created_at = datetime.utcnow()
+            self.updated_at = datetime.utcnow()
+
+    def save(self):
+        """Updates updated_at with the current time"""
+        self.updated_at = datetime.utcnow()
+        # Call storage save method here if needed
+        # storage.save()
+
+    def to_dict(self):
+        """Returns a dictionary representation of the instance"""
         dictionary = {}
-        dictionary.update(self.__dict__)
-        dictionary.update({'__class__':
-                           (str(type(self)).split('.')[-1]).split('\'')[0]})
-        dictionary['created_at'] = self.created_at.isoformat()
-        dictionary['updated_at'] = self.updated_at.isoformat()
+        for key, value in self.__dict__.items():
+            if isinstance(value, datetime):
+                dictionary[key] = value.isoformat()
+            else:
+                dictionary[key] = value
+        dictionary.update({'__class__': self.__class__.__name__})
+        return dictionary
+
+    def __str__(self):
+        """Returns a string representation of the instance"""
+        return "[{}] ({}) {}".format(self.__class__.__name__, self.id, self.__dict__)
